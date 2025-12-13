@@ -1,20 +1,23 @@
-# scraper_api.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 from typing import List
+from pymongo import MongoClient, errors
 from datetime import datetime
 import uvicorn
 from main import DetailedJobScraper
 
-app = FastAPI(title="Job Scraper API")
+# -------------------------- FastAPI --------------------------
+app = FastAPI(title="Job Scraper API")  # <-- d'abord créer l'instance
 
-# --- CORS: allow frontend (adjust origin as needed) ---
+# --- CORS ---
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins or ["*"],
@@ -23,19 +26,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -------------------------- MongoDB --------------------------
+client = MongoClient("mongodb://127.0.0.1:27017/")
+db = client["job_scraper_db"]
+collection = db["jobs"]
+collection.create_index("link", unique=True)
+
+# -------------------------- Scraper --------------------------
 scraper = DetailedJobScraper()
 
 class SearchRequest(BaseModel):
     title: str
     location: str = "Paris"
     jobs_per_search: int = 5
+    user_id: Optional[str] = None
 
 @app.post("/search")
 def search(req: SearchRequest):
     try:
-        # Use the real scraper
+
         results = scraper.search_jobs([req.title], [req.location], req.jobs_per_search)
-        # normalize keys for frontend
+
+
+        # Insérer dans MongoDB avec user_id
+        if req.user_id:
+         for job in results:
+            job["scraped_at"] = datetime.now()
+            job["userId"] = req.user_id
+            try:
+                collection.insert_one(job)
+            except errors.DuplicateKeyError:
+                pass
+
+        # Normaliser pour le frontend
         normalized = []
         for j in results:
             normalized.append({
@@ -48,11 +71,13 @@ def search(req: SearchRequest):
                 "link": j.get("link", ""),
                 "posted_at": j.get("posted_at", datetime.now().strftime("%Y-%m-%d"))
             })
+
         return {"results": normalized}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
+    
 if __name__ == "__main__":
-    # run with python scraper_api.py
     uvicorn.run("scraper_api:app", host="127.0.0.1", port=8000, reload=True)
+
+

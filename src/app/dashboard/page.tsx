@@ -18,10 +18,20 @@ export default function JobOffersPage() {
   });
 
   const handleSearch = async () => {
+
+
     if (!filters.title.trim()) return;
 
     setLoading(true);
     setError(null);
+
+    // 🔥 LIRE userId
+    const userId =
+      typeof window !== "undefined"
+        ? localStorage.getItem("userId")
+        : null;
+
+    console.log("USER ID:", userId);
 
     try {
       const res = await fetch("http://127.0.0.1:8000/search", {
@@ -32,7 +42,8 @@ export default function JobOffersPage() {
           location: filters.location,
           contract: filters.contract,
           salary: filters.salary,
-          jobs_per_search: 5
+          jobs_per_search: 5,
+          user_id: userId,
         }),
       });
 

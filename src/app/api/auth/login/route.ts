@@ -35,7 +35,14 @@ export async function POST(req: Request) {
         { expiresIn: "1d" }
     );
 
-    return new Response(JSON.stringify({ token }), { status: 200 });
+    return new Response(
+    JSON.stringify({
+      token,
+      userId: user._id.toString(), // ✅ AJOUT CRUCIAL
+    }),
+    { status: 200 }
+    );
+
     } catch (error) {
 
         return new Response(JSON.stringify({ error: "Something went wrong" }), { status: 500 });

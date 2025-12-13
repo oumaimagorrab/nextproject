@@ -16,86 +16,82 @@ export default function LoginPage() {
 
   /* ---------------------- LOGIN EMAIL/PASSWORD ---------------------- */
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
+    setErrorMsg(""); // reset error
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.message);
-      return;
+      if (!res.ok) {
+        setErrorMsg(data.message || "Login failed");
+        return;
+      }
+
+      // ✅ Sauvegarder l'userId dans localStorage
+      localStorage.setItem("userId", data.userId);
+
+      // Redirection vers dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    // Si login ok → redirection
-    router.push("/dashboard");
-
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   /* ---------------------------- GOOGLE LOGIN ------------------------- */
   const handleGoogleLogin = async () => {
-  try {
-    setLoading(true);
-    await signInWithPopup(auth, provider);
-    router.push("/dashboard");
-  } catch (error) {
-    console.error("Google login error:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, provider);
 
-
+      // Récupérer l'ID unique de Firebase
+      const userId = result.user?.uid;
+      if (userId) {
+        localStorage.setItem("userId", userId);
+        router.push("/dashboard");
+      } else {
+        setErrorMsg("Google login failed.");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      setErrorMsg("Google login failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#D8CEF6] p-6">
-
-      {/* --- GLOBAL GRID (Left + Right) --- */}
       <div className="flex w-full max-w-5xl bg-transparent">
-
-        {/* ---------------------- LEFT SECTION (Logo) ---------------------- */}
-        <div className="flex flex-1 items-center justify-center h-[500px]"> 
-          <img src="/logo2.png" alt="illustration" className="w-full h-full object-contain" /> 
+        {/* Left section */}
+        <div className="flex flex-1 items-center justify-center h-[500px]">
+          <img src="/logo2.png" alt="illustration" className="w-full h-full object-contain" />
         </div>
 
-        {/* ---------------------- RIGHT SECTION (Form) --------------------- */}
+        {/* Right section */}
         <div className="w-1/2 flex items-center justify-center">
           <div className="bg-white w-full max-w-md p-10 rounded-2xl shadow-xl">
+            <h1 className="text-2xl font-bold text-gray-900">Welcome to SmartDash!</h1>
+            <p className="text-gray-500 mb-8">Login to your account</p>
 
-            <h1 className="text-2xl font-bold text-gray-900">
-              Welcome to SmartDash!
-            </h1>
-            <p className="text-gray-500 mb-8">
-              Login to your account
-            </p>
-
-            {/* ---------- ERROR MESSAGE ---------- */}
             {errorMsg && (
-              <p className="mb-4 text-red-600 bg-red-100 p-2 rounded-lg text-sm">
-                {errorMsg}
-              </p>
+              <p className="mb-4 text-red-600 bg-red-100 p-2 rounded-lg text-sm">{errorMsg}</p>
             )}
 
-            {/* -------------------------- FORM -------------------------- */}
             <form className="space-y-4" onSubmit={handleLogin}>
-
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -108,9 +104,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
                 <input
                   type="password"
                   placeholder="8+ characters"
@@ -121,7 +115,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Login button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -131,32 +124,24 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* ---------------- GOOGLE LOGIN ---------------- */}
+            {/* Google login */}
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
               className="mt-4 w-full flex items-center justify-center gap-3 border border-slate-200 py-3 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
             >
               <img src="/google-icon.png" alt="Google" className="w-5" />
-              <span className="text-sm font-medium text-slate-700">
-                Continue with Google
-              </span>
+              <span className="text-sm font-medium text-slate-700">Continue with Google</span>
             </button>
 
-            {/* ---------------------- FOOTER ---------------------- */}
             <p className="mt-6 text-center text-sm text-slate-600">
               Don’t have an account?{" "}
-              <Link
-                href="/register"
-                className="text-indigo-600 font-semibold hover:underline"
-              >
+              <Link href="/register" className="text-indigo-600 font-semibold hover:underline">
                 Sign up
               </Link>
             </p>
-
           </div>
         </div>
-
       </div>
     </main>
   );
