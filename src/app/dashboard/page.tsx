@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import dynamic from "next/dynamic";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
 export default function JobOffersPage() {
   const [jobData, setJobData] = useState<any[]>([]);
@@ -13,25 +16,15 @@ export default function JobOffersPage() {
   const [filters, setFilters] = useState({
     title: "Frontend Developer",
     location: "Paris",
-    contract: "All",
-    salary: "30-50",
   });
 
   const handleSearch = async () => {
-
-
     if (!filters.title.trim()) return;
 
     setLoading(true);
     setError(null);
 
-    // 🔥 LIRE userId
-    const userId =
-      typeof window !== "undefined"
-        ? localStorage.getItem("userId")
-        : null;
-
-    console.log("USER ID:", userId);
+    const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
     try {
       const res = await fetch("http://127.0.0.1:8000/search", {
@@ -40,8 +33,6 @@ export default function JobOffersPage() {
         body: JSON.stringify({
           title: filters.title,
           location: filters.location,
-          contract: filters.contract,
-          salary: filters.salary,
           jobs_per_search: 5,
           user_id: userId,
         }),
@@ -59,15 +50,49 @@ export default function JobOffersPage() {
     }
   };
 
+  // 🔹 Calcul des statistiques pour les graphiques
+  const jobCountByTitle = jobData.reduce((acc, job) => {
+    acc[job.title] = (acc[job.title] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const seriesTitle = [{
+    name: "Jobs",
+    data: Object.values(jobCountByTitle),
+  }];
+
+  const optionsTitle = {
+    chart: { id: "jobs-by-title", toolbar: { show: false } },
+    xaxis: { categories: Object.keys(jobCountByTitle), labels: { style: { colors: '#1E293B', fontSize: '12px' },rotate: 0, rotateAlways: false,offsetY: 0, trim: true } },
+    title: { text: "Jobs by Title", align: "center", style: { fontSize: '18px', fontWeight: 'bold', color: '#1E293B' } },
+    colors: ['#6366F1'],
+    dataLabels: { enabled: true, style: { colors: ['#1E293B'] } },
+    grid: { borderColor: '#E0E7FF' }
+  };
+
+  const jobCountByLocation = jobData.reduce((acc, job) => {
+    acc[job.location] = (acc[job.location] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const seriesLocation = Object.values(jobCountByLocation);
+
+  const optionsLocation = {
+    chart: { id: "jobs-by-location", toolbar: { show: false } },
+    labels: Object.keys(jobCountByLocation),
+    title: { text: "Jobs by Location", align: "center", style: { fontSize: '18px', fontWeight: 'bold', color: '#1E293B' } },
+    colors: ['#6366F1', '#10B981', '#FBBF24'],
+    legend: { position: 'bottom', fontSize: '14px' },
+  };
+
   return (
-    <div className="p-6 w-full min-h-screen bg-gray-50">
+    <div className="p-6 w-full min-h-screen bg-[#F5F3FF]">
       <div className="grid grid-cols-12 gap-6">
 
         {/* Filters */}
-        <Card className="col-span-3 p-4">
-          <h2 className="text-xl font-semibold mb-4">Filter</h2>
+        <Card className="col-span-3 p-6 shadow-lg rounded-xl bg-white">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Filter</h2>
           <div className="space-y-4">
-            {/* Title */}
             <div>
               <label className="block text-sm font-medium mb-1">Title</label>
               <Select value={filters.title} onValueChange={(val) => setFilters({ ...filters, title: val })}>
@@ -80,7 +105,6 @@ export default function JobOffersPage() {
               </Select>
             </div>
 
-            {/* Location */}
             <div>
               <label className="block text-sm font-medium mb-1">Location</label>
               <Select value={filters.location} onValueChange={(val) => setFilters({ ...filters, location: val })}>
@@ -93,66 +117,53 @@ export default function JobOffersPage() {
               </Select>
             </div>
 
-            {/* Contract Type */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Contract Type</label>
-              <Select value={filters.contract} onValueChange={(val) => setFilters({ ...filters, contract: val })}>
-                <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All</SelectItem>
-                  <SelectItem value="CDI">CDI</SelectItem>
-                  <SelectItem value="CDD">CDD</SelectItem>
-                  <SelectItem value="Freelance">Freelance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Salary Range */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Salary Range</label>
-              <Select value={filters.salary} onValueChange={(val) => setFilters({ ...filters, salary: val })}>
-                <SelectTrigger><SelectValue placeholder="30-50k" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30-50">€30,000 - €50,000</SelectItem>
-                  <SelectItem value="50-70">€50,000 - €70,000</SelectItem>
-                  <SelectItem value="70-100">€70,000 - €100,000</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button className="w-full bg-blue-600 text-white hover:bg-blue-700" onClick={handleSearch}>
-              Search
+            <Button className="w-full bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition" onClick={handleSearch}>
+              {loading ? "Loading..." : "Search"}
             </Button>
           </div>
         </Card>
 
         {/* Job Table */}
-        <Card className="col-span-9 p-4">
+        <Card className="col-span-9 p-6 shadow-lg rounded-xl bg-white">
           <CardContent>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">Title</th>
-                  <th className="text-left py-2">Company</th>
-                  <th className="text-left py-2">Location</th>
-                  <th className="text-left py-2">Contract</th>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Title</th>
+                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Company</th>
+                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Location</th>
                 </tr>
               </thead>
               <tbody>
-                {loading && <tr><td colSpan={4}>Loading...</td></tr>}
-                {error && <tr><td colSpan={4}>{error}</td></tr>}
+                {loading && <tr><td colSpan={3}>Loading...</td></tr>}
+                {error && <tr><td colSpan={3}>{error}</td></tr>}
                 {jobData.map((job, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-2">{job.title}</td>
-                    <td>{job.company}</td>
-                    <td>{job.location}</td>
-                    <td>{job.contract}</td>
+                  <tr key={index} className="border-b border-gray-200 hover:bg-purple-50 transition-colors">
+                    <td className="py-2 text-gray-800">{job.title}</td>
+                    <td className="text-gray-800">{job.company}</td>
+                    <td className="text-gray-800">{job.location}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </CardContent>
         </Card>
+
+        {/* Graphiques */}
+        <Card className="col-span-12 mt-8 p-6 shadow-xl rounded-2xl bg-white">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Job Offers Statistics</h2>
+        <div className="grid grid-cols-2 gap-6">
+          {/* Jobs by Title */}
+          <div>
+        <Chart options={{...optionsTitle, colors: ['#4134cfff', '#4134cfff', '#4134cfff']}} series={seriesTitle} type="bar" height={350} />
+        </div>
+
+        {/* Jobs by Location */}
+        <div>
+          <Chart options={{...optionsLocation, colors: ['#7570D7', '#7d7fe0b3', '#4338CA']}} series={seriesLocation} type="donut" height={350} />
+        </div>
+        </div>
+      </Card>
 
       </div>
     </div>

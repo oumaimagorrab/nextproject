@@ -50,7 +50,7 @@ export default function HomePage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button className="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-blue-700">
+          <button className="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700">
             Rechercher
           </button>
         </div>

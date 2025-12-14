@@ -46,9 +46,9 @@ export default function Navbar() {
         <Link
         href="/login"
         className="px-4 py-2 text-sm font-semibold rounded-xl
-                  bg-gradient-to-r from-blue-600 to-blue-500
-                  text-white shadow-md 
-                  hover:shadow-blue-300/40 hover:scale-105 transition-all duration-300"
+                    bg-gradient-to-r from-indigo-600 to-indigo-700
+                    text-white shadow-md
+                    hover:shadow-indigo-300/40 hover:scale-105 transition-all duration-300"
         >
         Se connecter
         </Link>
