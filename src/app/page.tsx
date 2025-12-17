@@ -1,65 +1,133 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+type Job = {
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  description?: string;
+  link?: string;
+  score?: number;
+  posted_at?: string;
+};
+
+export default function HomePage() {
+  const [query, setQuery] = useState("");
+  const [jobData, setJobData] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          jobs_per_search: 10,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Network response was not ok");
+
+      const data = await res.json();
+      setJobData(data.results || []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch jobs. Is the backend running?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="p-6 w-full min-h-screen bg-[#F5F3FF]">
+
+      {/* ================= HERO ================= */}
+      <section className="flex flex-col items-center text-center mt-12 px-6">
+        <h1 className="text-5xl md:text-6xl font-extrabold text-[#1e2a4a] max-w-3xl leading-tight">
+          Find Your Next Job
+        </h1>
+
+        <p className="text-gray-700 mt-4 max-w-xl text-lg">
+          SmartDash analyzes job listings and presents you with new career opportunities.
+        </p>
+
+        {/* SEARCH BAR */}
+        <div className="flex items-center bg-white rounded-full shadow-lg w-full max-w-3xl px-6 py-3 gap-3 mt-10">
+          <span className="text-gray-500 text-xl">🔍</span>
+
+          <input
+            type="text"
+            placeholder="Backend developer London 60k remote…"
+            className="flex-1 outline-none text-gray-700"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+
+          <Button
+            className="bg-indigo-600 text-white px-8 py-4 rounded-full hover:bg-indigo-700"
+            onClick={handleSearch}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Search
+          </Button>
         </div>
-      </main>
+      </section>
+      {/* ================= RESULTS ================= */}
+      <section className="max-w-6xl mx-auto mt-12 px-6">
+        {loading && (
+          <p className="text-center text-gray-500">Loading…</p>
+        )}
+        {error && (
+          <p className="text-center text-red-500">{error}</p>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {jobData.map((job, index) => (
+            <Card
+              key={index}
+              className="hover:shadow-2xl transition-shadow duration-200"
+            >
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold text-[#1e2a4a]">
+                  {job.title}
+                </h2>
+
+                <p className="text-gray-600 mt-1">
+                  {job.company} — {job.location}
+                </p>
+
+                <p className="text-gray-500 text-sm mt-1">
+                  💰 {job.salary || "Not specified"} • 🤖 Score:{" "}
+                  {job.score?.toFixed(3) ?? "—"}
+                </p>
+
+                <p className="text-gray-700 mt-3">
+                  {job.description?.slice(0, 140)}
+                  {job.description && job.description.length > 140 ? "…" : ""}
+                </p>
+
+                <Button
+                  className="mt-4 bg-indigo-600 text-white hover:bg-indigo-700 w-full"
+                  onClick={() => window.open(job.link, "_blank")}
+                >
+                  Apply Now
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

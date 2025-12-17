@@ -71,7 +71,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#D8CEF6] p-6">
+    <main className="min-h-screen flex items-center justify-center bg-[#DDD6FE] p-6">
       <div className="flex w-full max-w-5xl bg-transparent">
         {/* Left section */}
         <div className="flex flex-1 items-center justify-center h-[500px]">

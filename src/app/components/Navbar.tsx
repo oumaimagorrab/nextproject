@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Navbar() {
   const menuLinks = [
-    { name: "Jobs", href: "/index" },
+    { name: "Jobs", href: "/" },
     { name: "Dashboard", href: "/dashboard" },
     { name: "About", href: "/about" },
   ];

@@ -5,6 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+
+// 🔔 ADD THIS IMPORT (notification only)
+import JobNotificationBell from "../components/JobNotificationBell";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false }) as any;
 
@@ -63,11 +67,10 @@ export default function JobOffersPage() {
 
   const optionsTitle = {
     chart: { id: "jobs-by-title", toolbar: { show: false } },
-    xaxis: { categories: Object.keys(jobCountByTitle), labels: { style: { colors: '#1E293B', fontSize: '12px' },rotate: 0, rotateAlways: false,offsetY: 0, trim: true } },
+    xaxis: { categories: Object.keys(jobCountByTitle), labels: { style: { colors: '#1E293B', fontSize: '12px' }, rotate: 0 } },
     title: { text: "Jobs by Title", align: "center", style: { fontSize: '18px', fontWeight: 'bold', color: '#1E293B' } },
     colors: ['#6366F1'],
-    dataLabels: { enabled: true, style: { colors: ['#1E293B'] } },
-    grid: { borderColor: '#E0E7FF' }
+    dataLabels: { enabled: true },
   };
 
   const jobCountByLocation = jobData.reduce((acc, job) => {
@@ -81,12 +84,16 @@ export default function JobOffersPage() {
     chart: { id: "jobs-by-location", toolbar: { show: false } },
     labels: Object.keys(jobCountByLocation),
     title: { text: "Jobs by Location", align: "center", style: { fontSize: '18px', fontWeight: 'bold', color: '#1E293B' } },
-    colors: ['#6366F1', '#10B981', '#FBBF24'],
-    legend: { position: 'bottom', fontSize: '14px' },
   };
 
   return (
     <div className="p-6 w-full min-h-screen bg-[#F5F3FF]">
+
+      {/* 🔔 NOTIFICATION BELL (ONLY ADDITION) */}
+      <div className="flex justify-end mb-4">
+        <JobNotificationBell />
+      </div>
+
       <div className="grid grid-cols-12 gap-6">
 
         {/* Filters */}
@@ -117,7 +124,7 @@ export default function JobOffersPage() {
               </Select>
             </div>
 
-            <Button className="w-full bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition" onClick={handleSearch}>
+            <Button className="w-full bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700" onClick={handleSearch}>
               {loading ? "Loading..." : "Search"}
             </Button>
           </div>
@@ -128,26 +135,50 @@ export default function JobOffersPage() {
           <CardContent>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-100">
-                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Title</th>
-                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Company</th>
-                  <th className="text-left py-2 font-semibold text-gray-700 uppercase">Location</th>
+                <tr className="border-b bg-gray-100">
+                  <th className="text-left py-2 w-1/4">Title</th>
+                  <th className="text-left py-2">Company</th>
+                  <th className="text-left py-2">Location</th>
+                  <th className="py-2 text-right"></th> {/* juste pour le header des boutons */}
                 </tr>
               </thead>
               <tbody>
-                {loading && <tr><td colSpan={3}>Loading...</td></tr>}
-                {error && <tr><td colSpan={3}>{error}</td></tr>}
+                {loading && (
+                  <tr>
+                    <td colSpan={4}>Loading...</td>
+                  </tr>
+                )}
+                {error && (
+                  <tr>
+                    <td colSpan={4}>{error}</td>
+                  </tr>
+                )}
                 {jobData.map((job, index) => (
-                  <tr key={index} className="border-b border-gray-200 hover:bg-purple-50 transition-colors">
-                    <td className="py-2 text-gray-800">{job.title}</td>
-                    <td className="text-gray-800">{job.company}</td>
-                    <td className="text-gray-800">{job.location}</td>
+                  <tr key={index} className="border-b hover:bg-purple-50">
+                    <td className="py-2 w-1/4">{job.title}</td>
+                    <td className="py-2">{job.company}</td>
+                    <td className="py-2">{job.location}</td>
+                    <td className="py-2 text-right flex justify-end gap-2">
+                      <button
+                        className="bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                        onClick={() => window.open(job.link, "_blank")}
+                      >
+                        Apply
+                      </button>
+                      <Link href="/sendcv">
+                        <button className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700" 
+                        >
+                        Send CV
+                      </button>
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </CardContent>
         </Card>
+
 
         {/* Graphiques */}
         <Card className="col-span-12 mt-8 p-6 shadow-xl rounded-2xl bg-white">

@@ -77,7 +77,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#D8CEF6] p-6">
+    <main className="min-h-screen flex items-center justify-center bg-[#DDD6FE] p-6">
       
       {/* --- GLOBAL GRID (Left + Right) --- */}
       <div className="flex w-full max-w-5xl bg-transparent">
